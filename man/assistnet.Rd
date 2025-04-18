@@ -9,7 +9,10 @@ assistnet(
   assist = "assist",
   player = "player",
   points = "points",
-  event.type = "event_type"
+  event.type = "event_type",
+  normalize = FALSE,
+  period.length = 12,
+  time.thr = 0
 )
 }
 \arguments{
@@ -22,6 +25,12 @@ assistnet(
 \item{points}{character, indicating the name of the variable with points.}
 
 \item{event.type}{character, indicating the name of the variable with type of event (mandatory categories are \code{"miss"} for missed field shots and \code{"shot"} for field goals).}
+
+\item{normalize}{logical, if \code{TRUE} the number of assists is normalized (default \code{normalize=FALSE}, see Details).}
+
+\item{period.length}{numerical, the length of a quarter in minutes (default: 12 minutes as in NBA)}
+
+\item{time.thr}{numerical,  Minimum number of minutes played together by a pair of players required for computing their normalized assist count. Pairs below \code{time.thr} are excluded to avoid inflation due to small denominators (default: \code{time.thr = 0}).}
 }
 \value{
 A \code{list} with 3 elements, \code{assistTable} (a table), \code{nodeStats} (a data frame), and \code{assistNet} (a network object). See Details.
@@ -62,22 +71,34 @@ A \code{list} with 3 elements, \code{assistTable} (a table), \code{nodeStats} (a
 \item \code{ASTPTS} (point scored by assist's teammates).
 }
 
+\code{minTable}, a square matrix with the total number of minutes played in attack by each pair of players; the elements on the principal diagonal are set to zero.
+
+\code{assistminTable}, a matrix showing the assist frequency between player pairs, adjusted for minutes played together in attack and expressed per \code{4*period.length} minutes.
+
 \code{assistNet}, an object of class \code{network} that can be used for further network analysis with specific R packages (see \code{\link[network]{network}})
 }
 \description{
-Investigates the network of assists-shots in a team
+The \code{assistnet} command provides a comprehensive analysis of a team's assist-shot network, revealing crucial insights into player interactions and on-court dynamics. \loadmathjax
 }
 \details{
-The \code{data} data frame could also be a play-by-play dataset provided that rows corresponding to events different from field shots are not coded as \code{"shot"} in the \code{event.type} variable.
+The \code{data} data frame could also be a play-by-play dataset provided that rows corresponding to events different from field shots are not coded as \code{"shot"} in the \code{event.type} variable. (To be completed)
+
+Normalization: \mjdeqn{4 \cdot \text{(period.length)} \cdot  \frac{(\text{number of assists})}{\text{(minutes played in attack by each couple of players)}}}{4  (period.length) (number of assists)/(minutes played in attack by each couple of players)}
 }
 \examples{
 PbP <- PbPmanipulation(PbP.BDB)
 PbP.GSW <- subset(PbP, team=="GSW")
 out <- assistnet(PbP.GSW)
-plot(out, layout="circle", edge.thr=30, node.col="FGM_ASTp", node.size="ASTPTS")
+plot(out)
+\dontrun{
+  out <- assistnet(PbP.GSW, normalize=TRUE, time.thr=50)
+  plot(out, edge.thr=5)
+}
 }
 \references{
 P. Zuccolotto and M. Manisera (2020) Basketball Data Science: With Applications in R. CRC Press.
+
+P. Zuccolotto, M. Manisera and M. Sandri (2026) Advanced Basketball Data Science: With Applications in R. CRC Press.
 }
 \author{
 Marco Sandri, Paola Zuccolotto, Marica Manisera (\email{basketballanalyzer.help@unibs.it})

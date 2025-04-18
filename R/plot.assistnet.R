@@ -25,10 +25,6 @@
 #' plot(out, layout="circle", edge.thr=30, node.col="FGM_ASTp", node.size="ASTPTS")
 #' @method plot assistnet
 #' @export
-#' @importFrom ggnetwork ggnetwork
-#' @importFrom ggnetwork geom_nodes
-#' @importFrom ggnetwork geom_nodetext_repel
-#' @importFrom ggnetwork geom_edges
 #' @importFrom ggplot2 guides
 #' @importFrom ggplot2 arrow
 #' @importFrom ggplot2 scale_alpha
@@ -43,12 +39,27 @@ plot.assistnet <- function(x, layout="kamadakawai", layout.par=list(),
                            node.pal=colorRampPalette(c("white","blue", "red")),
                            edge.pal=colorRampPalette(c("white","blue", "red")), ...) {
 
+  if (!requireNamespace("ggnetwork", quietly = TRUE)) {
+    stop("Package 'ggnetwork' is required for plotting. Please install it.", call. = FALSE)
+  }
+
+  if (!requireNamespace("network", quietly = TRUE)) {
+    stop("The 'network' package is required to use '%e%'. Please install it.", call. = FALSE)
+  }
+  `%e%` <- get("%e%", envir = asNamespace("network"))
+
   if (!is.assistnet(x)) {
     stop("Not a 'assistnet' object")
   }
   y <- xend <- yend <- N <- player <- vertex.names <- NULL
+  normalize <- x[["normalize"]]
+  period.length <- x[["period.length"]]
   net <- x[["assistNet"]]
-  tbl <- x[["assistTable"]]
+  if (normalize) {
+    tbl <- x[["assistminTable"]]
+  } else {
+    tbl <- x[["assistTable"]]
+  }
 
   if (!is.null(node.size) & !is.null(node.col)) { ####
     if (is.null(node.col.lab)) {
@@ -77,7 +88,9 @@ plot.assistnet <- function(x, layout="kamadakawai", layout.par=list(),
   if (is.null(edge.col.lim)) {
     edge.col.lim <- range(tbl)
   }
-  if (is.null(edge.col.lab)) {
+  if (is.null(edge.col.lab) & normalize) {
+    edge.col.lab <- paste0("Edge color:\nnumber of assists\nper ", 4*period.length," min")
+  } else if (is.null(edge.col.lab) & !normalize) {
     edge.col.lab <- "Edge color:\nnumber of assists"
   }
 
@@ -102,7 +115,7 @@ plot.assistnet <- function(x, layout="kamadakawai", layout.par=list(),
 
   p <- p +
     ggnetwork::geom_nodetext_repel(aes(label=vertex.names)) +
-    scale_alpha(guide=FALSE) +
+    scale_alpha(guide='none') +
     ggnetwork::theme_blank()
 
   return(p)

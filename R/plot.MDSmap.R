@@ -8,6 +8,7 @@
 #' @param labels character vector, labels for (x, y) points (only for single scatter plot).
 #' @param repel_labels logical; if \code{TRUE}, draw text labels using repelling (not for highlighted points) (see \code{\link[ggrepel]{geom_text_repel}}).
 #' @param text_label logical; if \code{TRUE}, draw a rectangle behind the text labels (not active if \code{subset=NULL}).
+#' @param label_size numeric;  label font size (default \code{label_size=3}, for scatter plots).
 #' @param subset logical vector, to select a subset of points to be highlighted.
 #' @param col.subset character, color for the subset of points.
 #' @param zoom numeric vector with 4 elements; \code{c(xmin,xmax,ymin,ymax)} for the x- and y-axis limits of the plot.
@@ -31,13 +32,13 @@
 #' @export
 
 plot.MDSmap <- function(x, z.var = NULL, level.plot=TRUE,  title = NULL, labels = NULL,
-                        repel_labels = FALSE, text_label = TRUE, subset = NULL, col.subset = "gray50",
+                        repel_labels = FALSE, text_label = TRUE, label_size=3, subset = NULL, col.subset = "gray50",
                         zoom = NULL, palette = NULL, contour = FALSE, ncol.arrange = NULL, ...) {
 
   if (!is.MDSmap(x)) {
     stop("Not a 'MDSmap' object")
   }
-  X1 <- X2 <- Z <- '..level..' <- NULL
+  X1 <- X2 <- Z <- level <- NULL
   if (!is.null(z.var)) {
     if (!inherits(data, "dist")) {
       data <- x$data
@@ -77,10 +78,11 @@ plot.MDSmap <- function(x, z.var = NULL, level.plot=TRUE,  title = NULL, labels 
   if (is.null(z.var)) { ### If 'z.var' is NULL
     listPlots <- vector(1, mode = "list")
     p <- scatterplot(data=config, data.var=c("X1","X2"), labels=labels, repel_labels=repel_labels,
-           text_label=text_label, subset=subset, col.subset = col.subset, zoom = zoom, title = title)
+           text_label=text_label, label_size=label_size, subset=subset, col.subset = col.subset,
+           zoom = NULL, title = title)
     p <- p + xlab("") + ylab("") +
       annotate(geom = "text", label = subtitle, x = Inf, y = Inf, hjust = 1, vjust = -1) +
-      coord_cartesian(clip = 'off')
+      coord_cartesian(xlim=c(zoom[1], zoom[2]), ylim=c(zoom[3], zoom[4]), clip = 'off')
     listPlots[[1]] <- p
   } else if (!is.null(z.var) & !level.plot) {  ### If 'z.var' is not NULL & level.plot=FALSE
     nv <- length(z.var)
@@ -91,8 +93,8 @@ plot.MDSmap <- function(x, z.var = NULL, level.plot=TRUE,  title = NULL, labels 
       dts <- data.frame(config[, 1:2], subset(data, select = vark))
       names(dts) <- c("X1", "X2", vark)
       p <- scatterplot(data=dts, data.var=c("X1","X2"), z.var=vark, palette=palette,
-            labels=labels, repel_labels=repel_labels, text_label=text_label, subset=subset, col.subset = col.subset,
-            zoom = zoom, title = title)
+            labels=labels, repel_labels=repel_labels, text_label=text_label, label_size=label_size,
+            subset=subset, col.subset = col.subset, zoom = zoom, title = title)
       p <- p + xlab("") + ylab("") +
         annotate(geom = "text", label = subtitle, x = Inf, y = Inf, hjust = 1, vjust = -1) +
         coord_cartesian(clip = 'off')
@@ -125,7 +127,7 @@ plot.MDSmap <- function(x, z.var = NULL, level.plot=TRUE,  title = NULL, labels 
         xlab("") + ylab("") + theme(panel.background = element_blank())
       if (contour) {
         p <- p + geom_contour(color = "black", alpha = 0.5, show.legend = TRUE) +
-          directlabels::geom_dl(aes(label = ..level..),
+          directlabels::geom_dl(aes(label = after_stat(level)),
                                 method = "far.from.others.borders", stat = "contour")
       }
       listPlots[[k]] <- p
